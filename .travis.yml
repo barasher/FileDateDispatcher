@@ -6,7 +6,7 @@ go:
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y libimage-exiftool-perl
-  - go get -v
+  - env GO111MODULE=on go get -v
 
 script:
-- go test -v ./...
+- env GO111MODULE=on go test -v ./...
