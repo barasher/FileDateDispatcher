@@ -1,4 +1,5 @@
 testdata/tmp
+dispatcher
 
 # Binaries for programs and plugins
 *.exe
