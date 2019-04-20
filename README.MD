@@ -8,7 +8,18 @@ Let's consider that you have a folder containing a bunch of files (pictures, mov
 
 ## Usage
 
-###
+### From binary
+
+#### Dependency
+
+**FileDataDispatcher** requires **exiftool** to be installed :
+- Ubuntu : `sudo apt-get install libimage-exiftool-perl`
+
+#### Compilation
+
+`go build cmd/dispatcher.go`
+
+#### Execution
 
 Arguments :
 - `-s` : source folder (required)
