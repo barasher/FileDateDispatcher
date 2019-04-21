@@ -46,8 +46,17 @@ Output :
 #### Execution
 
 When executing the container, it will use :
-- `/var/in` as a source folder (inside the container)
-- `/var/out` as a target folder (inside the container)
+- `/var/dispatcher/in` as a source folder (inside the container)
+- `/var/dispatcher/out` as a target folder (inside the container)
+- `/etc/dispatcher/dispatcher.json` as a configuration file (a default one is integrated)
 
 So, to deal with folder from the host, you will have to specify volumes :
-`docker run --rm -v [sourceFolder from host]:/var/in -v [targetFolder from host]:/var/out filedatedispatcher:latest`
+
+```
+docker run
+  --rm
+  -v [sourceFolder from host]:/var/dispatcher/in
+  -v [targetFolder from host]:/var/dispatcher/out
+  -v [configurationFile from host]:/etc/dispatcher/dispatcher.json
+  filedatedispatcher:latest`
+```

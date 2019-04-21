@@ -28,7 +28,7 @@ func TestGetLoadNominal(t *testing.T) {
 			e := Exiftool{}
 			res, err := e.Load(tc.files)
 			assert.Nil(t, err)
-			for i, _ := range res {
+			for i := range res {
 				assert.Subset(t, tc.expFiles, []string{res[i].File})
 			}
 		})
