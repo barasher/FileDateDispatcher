@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -18,24 +17,14 @@ type FileMetadata struct {
 	Fields map[string]interface{}
 }
 
-var dateFields map[string]string = map[string]string{
-	"CreateDate":        "2006:01:02 15:04:05",
-	"Media Create Date": "2006:01:02 15:04:05",
-}
-
-var NoDateFound error = fmt.Errorf("No data found")
-
-func (fm *FileMetadata) GuessDate() (time.Time, error) {
-	for field, pattern := range dateFields {
-		if val, found := fm.Fields[field]; found {
-			t, err := time.Parse(pattern, val.(string))
-			if err != nil {
-				return time.Time{}, fmt.Errorf("error when parsing date %v: %v", val.(string), err)
-			}
-			return t, nil
+func NewExiftool(opts ...func(*Exiftool) error) (*Exiftool, error) {
+	e := Exiftool{}
+	for _, opt := range opts {
+		if err := opt(&e); err != nil {
+			return nil, fmt.Errorf("error when configuring exiftool: %v", err)
 		}
 	}
-	return time.Time{}, NoDateFound
+	return &e, nil
 }
 
 func (e *Exiftool) Load(files []string) ([]FileMetadata, error) {

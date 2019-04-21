@@ -1,11 +1,36 @@
 package exiftool
 
 import (
+	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestNewExiftoolNominal(t *testing.T) {
+	invocation1 := false
+	invocation2 := false
+	f1 := func(*Exiftool) error {
+		invocation1 = true
+		return nil
+	}
+	f2 := func(*Exiftool) error {
+		invocation2 = true
+		return nil
+	}
+	_, err := NewExiftool(f1, f2)
+	assert.Nil(t, err)
+	assert.True(t, invocation1)
+	assert.True(t, invocation2)
+}
+
+func TestNewExiftoolError(t *testing.T) {
+	f := func(*Exiftool) error {
+		return fmt.Errorf("error")
+	}
+	_, err := NewExiftool(f)
+	assert.NotNil(t, err)
+}
 
 func TestGetLoadNominal(t *testing.T) {
 	var tcs = []struct {
@@ -39,40 +64,4 @@ func TestLoadUnexistingFile(t *testing.T) {
 	e := Exiftool{}
 	_, err := e.Load([]string{"../testdata/shouldNotExist"})
 	assert.NotNil(t, err)
-}
-
-func TestGuessDateNominal(t *testing.T) {
-	fields := map[string]interface{}{
-		"a":          "b",
-		"CreateDate": "2018:01:02 03:04:05",
-	}
-	fm := FileMetadata{File: "a", Fields: fields}
-	got, err := fm.GuessDate()
-	assert.Nil(t, err)
-	assert.Equal(t, 2018, got.Year())
-	assert.Equal(t, time.January, got.Month())
-	assert.Equal(t, 2, got.Day())
-	assert.Equal(t, 3, got.Hour())
-	assert.Equal(t, 4, got.Minute())
-	assert.Equal(t, 5, got.Second())
-}
-
-func TestGuessDateWithoutDateField(t *testing.T) {
-	fields := map[string]interface{}{
-		"a": "b",
-	}
-	fm := FileMetadata{File: "a", Fields: fields}
-	_, err := fm.GuessDate()
-	assert.Equal(t, NoDateFound, err)
-}
-
-func TestGuessDateUnparsableDate(t *testing.T) {
-	fields := map[string]interface{}{
-		"a":          "b",
-		"CreateDate": "unparsableDate",
-	}
-	fm := FileMetadata{File: "a", Fields: fields}
-	_, err := fm.GuessDate()
-	assert.NotNil(t, err)
-	assert.NotEqual(t, NoDateFound, err)
 }
