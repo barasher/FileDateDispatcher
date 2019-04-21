@@ -3,6 +3,7 @@ package classifier
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -175,13 +176,34 @@ func (cl *Classifier) moveFiles(ctx context.Context, cancel context.CancelFunc, 
 			_, f := filepath.Split(ma.from)
 			to := filepath.Join(outputFolder, ma.to, f)
 			logrus.Debugf("Moving %v to %v", ma.from, to)
-			if err := os.Rename(ma.from, to); err != nil {
-				logrus.Errorf("error when movind %v to %v: %v", ma.from, to, err)
+			if err := move(ma.from, to); err != nil {
+				logrus.Errorf("error when moving %v to %v: %v", ma.from, to, err)
 			} else {
 				moveCount++
 			}
 		}
 	}
 	logrus.Infof("%v moved file(s)", moveCount)
+}
 
+func copy(from, to string) error {
+	source, err := os.Open(from)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+	destination, err := os.Create(to)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+	_, err = io.Copy(destination, source)
+	return err
+}
+
+func move(from, to string) error {
+	if err := copy(from, to); err != nil {
+		return err
+	}
+	return os.Remove(from)
 }

@@ -38,3 +38,16 @@ Output :
 - `/tmp/out/2019_02/tutu.avi`
 
 ### Docker
+
+#### Building image
+
+`docker build -t filedatedispatcher:latest .`
+
+#### Execution
+
+When executing the container, it will use :
+- `/var/in` as a source folder (inside the container)
+- `/var/out` as a target folder (inside the container)
+
+So, to deal with folder from the host, you will have to specify volumes :
+`docker run --rm -v [sourceFolder from host]:/var/in -v [targetFolder from host]:/var/out filedatedispatcher:latest`

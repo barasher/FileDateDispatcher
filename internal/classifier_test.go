@@ -2,28 +2,12 @@ package classifier
 
 import (
 	"context"
-	"io"
 	"os"
 	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func copyFile(src, dst string) error {
-	source, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer source.Close()
-	destination, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer destination.Close()
-	_, err = io.Copy(destination, source)
-	return err
-}
 
 func checkExist(t *testing.T, path string, shouldExist bool) {
 	_, err := os.Stat(path)
@@ -218,7 +202,7 @@ func TestGetMoveActions(t *testing.T) {
 
 func TestMoveFiles(t *testing.T) {
 	assert.Nil(t, os.MkdirAll("../testdata/tmp/batch/TestMoveFilesNominal/in", 0777))
-	assert.Nil(t, copyFile("../testdata/input/20190404_131804.jpg", "../testdata/tmp/batch/TestMoveFilesNominal/in/20190404_131804.jpg"))
+	assert.Nil(t, copy("../testdata/input/20190404_131804.jpg", "../testdata/tmp/batch/TestMoveFilesNominal/in/20190404_131804.jpg"))
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	moveChan := make(chan moveAction, 2)
@@ -236,10 +220,10 @@ func TestMoveFiles(t *testing.T) {
 
 func TestClassify(t *testing.T) {
 	assert.Nil(t, os.MkdirAll("../testdata/tmp/batch/TestClassify/in/subFolder", 0777))
-	assert.Nil(t, copyFile("../testdata/input/20190404_131804.jpg", "../testdata/tmp/batch/TestClassify/in/subFolder/20190404_131805.jpg"))
-	assert.Nil(t, copyFile("../testdata/input/20190404_131804.jpg", "../testdata/tmp/batch/TestClassify/in/subFolder/20190404_131806.jpg"))
-	assert.Nil(t, copyFile("../testdata/input/subFolder/noDate.txt", "../testdata/tmp/batch/TestClassify/in/subFolder/noDate.txt"))
-	assert.Nil(t, copyFile("../testdata/input/20190404_131804.jpg", "../testdata/tmp/batch/TestClassify/in/20190404_131804.jpg"))
+	assert.Nil(t, copy("../testdata/input/20190404_131804.jpg", "../testdata/tmp/batch/TestClassify/in/subFolder/20190404_131805.jpg"))
+	assert.Nil(t, copy("../testdata/input/20190404_131804.jpg", "../testdata/tmp/batch/TestClassify/in/subFolder/20190404_131806.jpg"))
+	assert.Nil(t, copy("../testdata/input/subFolder/noDate.txt", "../testdata/tmp/batch/TestClassify/in/subFolder/noDate.txt"))
+	assert.Nil(t, copy("../testdata/input/20190404_131804.jpg", "../testdata/tmp/batch/TestClassify/in/20190404_131804.jpg"))
 
 	c := Classifier{batchSize: 2}
 	c.Classify("../testdata/tmp/batch/TestClassify/in/", "../testdata/tmp/batch/TestClassify/out/")
