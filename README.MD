@@ -19,7 +19,8 @@ Let's consider that you have a folder containing a bunch of files (pictures, mov
     "dateFields": [
         { "field":"CreateDate", "pattern":"2006:01:02 15:04:05" },
         { "field":"Media Create Date", "pattern":"2006:01:02 15:04:05" }
-    ]
+    ],
+    "outputDateFormat":"2006_01"
 }
 ```
 
@@ -28,6 +29,7 @@ Let's consider that you have a folder containing a bunch of files (pictures, mov
 - **dateFields** : exiftool tags that have to be considered as valid date for dispatching
   - **dateFields.field** : exiftool tag key
   - **dateFields.pattern** : date pattern, based on golang specifications (https://golang.org/pkg/time/#Time.Format)
+- **outputDateFormat** : date pattern for the output folders, based on golang specifications (https://golang.org/pkg/time/#Time.Format)
 
 ## Usage
 
@@ -47,14 +49,13 @@ Let's consider that you have a folder containing a bunch of files (pictures, mov
 Arguments :
 - `-s` : source folder (required)
 - `-d` : destination folder (required)
-- `-l` : logging level (debug|info|warn|error|fatal|panic, default: info)
-- `-b` : batch size (default: 10)
+- `-c` : configuration file (required)
 
 Example input :
 - `/tmp/in/toto.jpg`
 - `/tmp/in/a/tutu.avi`
 
-Exécution : `./dispatcher -s /tmp/in -d /tmp/out`
+Exécution : `./dispatcher -s /tmp/in -d /tmp/out -c /tmp/dispatcher.json`
 
 Output :
 - `/tmp/out/2019_01/toto.jpg`
