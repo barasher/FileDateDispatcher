@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	exiftool "github.com/barasher/FileDateDispatcher/pkg"
 
@@ -22,9 +23,13 @@ type Classifier struct {
 	batchSize uint
 }
 
-func NewClassifier(opts ...func(*Classifier) error) (*Classifier, error) {
+var dateFields map[string]string = make(map[string]string)
+
+var noDateFound error = fmt.Errorf("No data found")
+
+func NewClassifier(classOpts ...func(*Classifier) error) (*Classifier, error) {
 	c := Classifier{batchSize: 10}
-	for _, opt := range opts {
+	for _, opt := range classOpts {
 		if err := opt(&c); err != nil {
 			return nil, fmt.Errorf("error when configuring classifier: %v", err)
 		}
@@ -37,6 +42,28 @@ func OptBatchSize(size uint) func(*Classifier) error {
 		c.batchSize = size
 		return nil
 	}
+}
+
+func OptDateFields(fields map[string]string) func(*Classifier) error {
+	return func(c *Classifier) error {
+		for f, p := range fields {
+			dateFields[f] = p
+		}
+		return nil
+	}
+}
+
+func (cl *Classifier) guessDate(fm exiftool.FileMetadata) (time.Time, error) {
+	for field, pattern := range dateFields {
+		if val, found := fm.Fields[field]; found {
+			t, err := time.Parse(pattern, val.(string))
+			if err != nil {
+				return time.Time{}, fmt.Errorf("error when parsing date %v: %v", val.(string), err)
+			}
+			return t, nil
+		}
+	}
+	return time.Time{}, noDateFound
 }
 
 func (cl *Classifier) Classify(inputFolder string, outputFolder string) error {
@@ -140,8 +167,8 @@ func (cl *Classifier) buildActionsAndPush(ctx context.Context, files []string, a
 		case <-ctx.Done():
 			return 0, fmt.Errorf("Canceled")
 		default:
-			if d, err := fm.GuessDate(); err != nil {
-				if err != exiftool.NoDateFound {
+			if d, err := cl.guessDate(fm); err != nil {
+				if err != noDateFound {
 					logrus.Errorf("error while generating moveAction for %v: %v", fm.File, err)
 				}
 			} else {

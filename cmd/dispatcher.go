@@ -30,9 +30,15 @@ var loggingLevels = map[string]logrus.Level{
 	"panic": logrus.PanicLevel,
 }
 
+type dateField struct {
+	Field   string `json:"field"`
+	Pattern string `json:"pattern"`
+}
+
 type dispatcherConf struct {
-	LoggingLevel string `json:"loggingLevel"`
-	BatchSize    uint   `json:"batchSize"`
+	LoggingLevel string      `json:"loggingLevel"`
+	BatchSize    uint        `json:"batchSize"`
+	DateFields   []dateField `json:"dateFields"`
 }
 
 func main() {
@@ -70,8 +76,13 @@ func doMain(args []string) int {
 		logrus.SetLevel(logLvl)
 	}
 
-	var opts []func(*classifier.Classifier) error
-	opts = append(opts, classifier.OptBatchSize(conf.BatchSize))
+	var classifierOpts []func(*classifier.Classifier) error
+	classifierOpts = append(classifierOpts, classifier.OptBatchSize(conf.BatchSize))
+	dfs := map[string]string{}
+	for _, v := range conf.DateFields {
+		dfs[v.Field] = v.Pattern
+	}
+	classifierOpts = append(classifierOpts, classifier.OptDateFields(dfs))
 
 	if *from == "" {
 		logrus.Errorf("No source provided (-s)")
@@ -83,7 +94,7 @@ func doMain(args []string) int {
 		return retConfFailure
 	}
 
-	c, err := classifier.NewClassifier(opts...)
+	c, err := classifier.NewClassifier(classifierOpts...)
 	if err != nil {
 		logrus.Errorf("Error while initializing classifier: %v", err)
 		return retExecFailure
@@ -117,6 +128,10 @@ func loadConf(confFile string) (dispatcherConf, error) {
 	if c.LoggingLevel == "" {
 		c.LoggingLevel = defaultLoggingLevel
 		logrus.Warnf("No logging level specified, using default (%v)", c.LoggingLevel)
+	}
+
+	if len(c.DateFields) == 0 {
+		return c, fmt.Errorf("No date fields specified in the configuration file")
 	}
 
 	return c, nil

@@ -7,25 +7,34 @@ import (
 )
 
 func TestLoadConf(t *testing.T) {
+	expDateFields := []dateField{
+		dateField{"CreateDate", "2006:01:02 15:04:05"},
+		dateField{"Media Create Date", "2006:01:02 15:04:05"},
+	}
 	var tcs = []struct {
 		tcId            string
 		confFile        string
 		expError        bool
 		expLoggingLevel string
 		expBatchSize    uint
+		expDateFields   []dateField
 	}{
-		{"nominal", "../testdata/conf/nominal.json", false, "warning", 42},
-		{"default", "../testdata/conf/default.json", false, defaultLoggingLevel, defaultBatchSize},
-		{"unparsable", "../testdata/conf/unparsable.json", true, "", 0},
-		{"nonExisting", "../testdata/conf/nonExisting.json", true, "", 0},
+		{"nominal", "../testdata/conf/nominal.json", false, "warning", 42, expDateFields},
+		{"default", "../testdata/conf/default.json", false, defaultLoggingLevel, defaultBatchSize, expDateFields},
+		{"unparsable", "../testdata/conf/unparsable.json", true, "", 0, nil},
+		{"nonExisting", "../testdata/conf/nonExisting.json", true, "", 0, nil},
+		{"noDateField", "../testdata/conf/noDateField.json", true, "", 0, nil},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.tcId, func(t *testing.T) {
 			c, err := loadConf(tc.confFile)
 			assert.Equal(t, tc.expError, err != nil)
-			assert.Equal(t, tc.expLoggingLevel, c.LoggingLevel)
-			assert.Equal(t, tc.expBatchSize, c.BatchSize)
+			if !tc.expError {
+				assert.Equal(t, tc.expLoggingLevel, c.LoggingLevel)
+				assert.Equal(t, tc.expBatchSize, c.BatchSize)
+				assert.Equal(t, tc.expDateFields, c.DateFields)
+			}
 		})
 	}
 }

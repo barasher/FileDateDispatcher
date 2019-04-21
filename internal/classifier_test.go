@@ -2,11 +2,15 @@ package classifier
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	exiftool "github.com/barasher/FileDateDispatcher/pkg"
 )
 
 func checkExist(t *testing.T, path string, shouldExist bool) {
@@ -16,6 +20,31 @@ func checkExist(t *testing.T, path string, shouldExist bool) {
 	} else {
 		assert.True(t, os.IsNotExist(err))
 	}
+}
+
+func TestNewClassifierNominal(t *testing.T) {
+	invocation1 := false
+	invocation2 := false
+	f1 := func(*Classifier) error {
+		invocation1 = true
+		return nil
+	}
+	f2 := func(*Classifier) error {
+		invocation2 = true
+		return nil
+	}
+	_, err := NewClassifier(f1, f2)
+	assert.Nil(t, err)
+	assert.True(t, invocation1)
+	assert.True(t, invocation2)
+}
+
+func TestNewClassifierError(t *testing.T) {
+	f := func(*Classifier) error {
+		return fmt.Errorf("error")
+	}
+	_, err := NewClassifier(f)
+	assert.NotNil(t, err)
 }
 
 func TestListFilesNominal(t *testing.T) {
@@ -47,7 +76,7 @@ func TestListFilesNominal(t *testing.T) {
 			var wgGlobal sync.WaitGroup
 			wgGlobal.Add(1)
 
-			c := Classifier{batchSize: 1}
+			c := buildDefaultClassifier(t, 1)
 			c.listFiles(ctx, cancel, tc.folder, filesChan, &wgGlobal)
 
 			files := make([]string, 10)
@@ -73,7 +102,7 @@ func TestBuildActionsAndPushCanceled(t *testing.T) {
 	defer close(actionChan)
 
 	cancel()
-	c := Classifier{}
+	c := buildDefaultClassifier(t, 2)
 	_, err := c.buildActionsAndPush(ctx, []string{"../testdata/input/20190404_131804.jpg"}, actionChan)
 	assert.NotNil(t, err)
 }
@@ -112,7 +141,7 @@ func TestBuildActionsAndPush(t *testing.T) {
 				ctx := context.TODO()
 				actionChan := make(chan moveAction, 10)
 
-				c := Classifier{}
+				c := buildDefaultClassifier(t, 2)
 				count, err := c.buildActionsAndPush(ctx, tc.files, actionChan)
 				close(actionChan)
 				assert.Nil(t, err)
@@ -140,7 +169,7 @@ func TestGetMoveActionsCanceled(t *testing.T) {
 	wgGlobal.Add(1)
 
 	cancel()
-	c := Classifier{batchSize: 2}
+	c := buildDefaultClassifier(t, 2)
 	c.getMoveActions(ctx, cancel, fileChan, actionChan, &wgGlobal)
 
 	actionCount := 0
@@ -185,7 +214,7 @@ func TestGetMoveActions(t *testing.T) {
 				}
 				close(fileChan)
 
-				c := Classifier{batchSize: 2}
+				c := buildDefaultClassifier(t, 2)
 				c.getMoveActions(ctx, cancel, fileChan, actionChan, &wgGlobal)
 
 				actions := []moveAction{}
@@ -211,7 +240,7 @@ func TestMoveFiles(t *testing.T) {
 	var wgGlobal sync.WaitGroup
 	wgGlobal.Add(1)
 
-	c := Classifier{batchSize: 2}
+	c := buildDefaultClassifier(t, 2)
 	c.moveFiles(ctx, cancel, "../testdata/tmp/batch/TestMoveFilesNominal/out", moveChan, &wgGlobal)
 
 	checkExist(t, "../testdata/tmp/batch/TestMoveFilesNominal/in/20190404_131804.jpg", false)
@@ -225,7 +254,7 @@ func TestClassify(t *testing.T) {
 	assert.Nil(t, copy("../testdata/input/subFolder/noDate.txt", "../testdata/tmp/batch/TestClassify/in/subFolder/noDate.txt"))
 	assert.Nil(t, copy("../testdata/input/20190404_131804.jpg", "../testdata/tmp/batch/TestClassify/in/20190404_131804.jpg"))
 
-	c := Classifier{batchSize: 2}
+	c := buildDefaultClassifier(t, 2)
 	c.Classify("../testdata/tmp/batch/TestClassify/in/", "../testdata/tmp/batch/TestClassify/out/")
 
 	checkExist(t, "../testdata/tmp/batch/TestClassify/in/subFolder/noDate.txt", true)
@@ -235,4 +264,52 @@ func TestClassify(t *testing.T) {
 	checkExist(t, "../testdata/tmp/batch/TestClassify/out/2019_04/20190404_131804.jpg", true)
 	checkExist(t, "../testdata/tmp/batch/TestClassify/out/2019_04/20190404_131805.jpg", true)
 	checkExist(t, "../testdata/tmp/batch/TestClassify/out/2019_04/20190404_131806.jpg", true)
+}
+
+func TestGuessDateNominal(t *testing.T) {
+	fields := map[string]interface{}{
+		"a":          "b",
+		"CreateDate": "2018:01:02 03:04:05",
+	}
+	fm := exiftool.FileMetadata{File: "a", Fields: fields}
+	c := buildDefaultClassifier(t, 2)
+	got, err := c.guessDate(fm)
+	assert.Nil(t, err)
+	assert.Equal(t, 2018, got.Year())
+	assert.Equal(t, time.January, got.Month())
+	assert.Equal(t, 2, got.Day())
+	assert.Equal(t, 3, got.Hour())
+	assert.Equal(t, 4, got.Minute())
+	assert.Equal(t, 5, got.Second())
+}
+
+func TestGuessDateWithoutDateField(t *testing.T) {
+	fields := map[string]interface{}{
+		"a": "b",
+	}
+	fm := exiftool.FileMetadata{File: "a", Fields: fields}
+	c := buildDefaultClassifier(t, 2)
+	_, err := c.guessDate(fm)
+	assert.Equal(t, noDateFound, err)
+}
+
+func TestGuessDateUnparsableDate(t *testing.T) {
+	fields := map[string]interface{}{
+		"a":          "b",
+		"CreateDate": "unparsableDate",
+	}
+	fm := exiftool.FileMetadata{File: "a", Fields: fields}
+	c := buildDefaultClassifier(t, 2)
+	_, err := c.guessDate(fm)
+	assert.NotNil(t, err)
+	assert.NotEqual(t, noDateFound, err)
+}
+
+func buildDefaultClassifier(t *testing.T, batchSize uint) *Classifier {
+	c, err := NewClassifier(
+		OptBatchSize(batchSize),
+		OptDateFields(map[string]string{"CreateDate": "2006:01:02 15:04:05"}),
+	)
+	assert.Nil(t, err)
+	return c
 }
