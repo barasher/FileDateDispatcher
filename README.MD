@@ -1,5 +1,9 @@
 # FileDateDispatcher
 
+[![Build Status](https://travis-ci.org/barasher/FileDateDispatcher.svg?branch=master)](https://travis-ci.org/barasher/FileDateDispatcher)
+[![go report card](https://goreportcard.com/badge/github.com/barasher/FileDateDispatcher "go report card")](https://goreportcard.com/report/github.com/barasher/FileDateDispatcher)
+
+
 ## Presentation
 
 **FileDateDispatcher** is a CLI tool designed to dispatch multimedia files by date.

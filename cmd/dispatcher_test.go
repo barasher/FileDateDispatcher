@@ -8,8 +8,8 @@ import (
 
 func TestLoadConf(t *testing.T) {
 	expDateFields := []dateField{
-		dateField{"CreateDate", "2006:01:02 15:04:05"},
-		dateField{"Media Create Date", "2006:01:02 15:04:05"},
+		{"CreateDate", "2006:01:02 15:04:05"},
+		{"Media Create Date", "2006:01:02 15:04:05"},
 	}
 	var tcs = []struct {
 		tcId                string

@@ -19,15 +19,17 @@ type moveAction struct {
 	to   string
 }
 
+// Classifier is a structure modeling the classifying tool
 type Classifier struct {
 	batchSize        uint
 	outputDateFormat string
 }
 
-var dateFields map[string]string = make(map[string]string)
+var dateFields = make(map[string]string)
 
-var noDateFound error = fmt.Errorf("No data found")
+var errNoDateFount = fmt.Errorf("No data found")
 
+// NewClassifier instanciates a new classifier with several optionnal functions
 func NewClassifier(classOpts ...func(*Classifier) error) (*Classifier, error) {
 	c := Classifier{batchSize: 10, outputDateFormat: "2006_01"}
 	for _, opt := range classOpts {
@@ -38,6 +40,7 @@ func NewClassifier(classOpts ...func(*Classifier) error) (*Classifier, error) {
 	return &c, nil
 }
 
+// OptBatchSize specifies the batch size for the classification
 func OptBatchSize(size uint) func(*Classifier) error {
 	return func(c *Classifier) error {
 		c.batchSize = size
@@ -45,6 +48,7 @@ func OptBatchSize(size uint) func(*Classifier) error {
 	}
 }
 
+// OptDateFields specifies which tags must be considered as classifying date
 func OptDateFields(fields map[string]string) func(*Classifier) error {
 	return func(c *Classifier) error {
 		for f, p := range fields {
@@ -54,6 +58,7 @@ func OptDateFields(fields map[string]string) func(*Classifier) error {
 	}
 }
 
+// OptOutputDateFormat specifies the output date format
 func OptOutputDateFormat(format string) func(*Classifier) error {
 	return func(c *Classifier) error {
 		c.outputDateFormat = format
@@ -71,9 +76,10 @@ func (cl *Classifier) guessDate(fm exiftool.FileMetadata) (time.Time, error) {
 			return t, nil
 		}
 	}
-	return time.Time{}, noDateFound
+	return time.Time{}, errNoDateFount
 }
 
+// Classify classifies the inputFolder and stores the results outputFolder
 func (cl *Classifier) Classify(inputFolder string, outputFolder string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	filesChan := make(chan string, cl.batchSize*2)
@@ -122,7 +128,7 @@ func (cl *Classifier) getMoveActions(ctx context.Context, cancel context.CancelF
 	defer wgGlobal.Done()
 	defer close(actionChan)
 	files := make([]string, cl.batchSize)
-	var i uint = 0
+	i := uint(0)
 	actionCount := 0
 
 	for f := range filesChan {
@@ -138,9 +144,8 @@ func (cl *Classifier) getMoveActions(ctx context.Context, cancel context.CancelF
 					cancel()
 					logrus.Errorf("error while pushing: %v", err2)
 					return
-				} else {
-					actionCount += count
 				}
+				actionCount += count
 				i = 0
 			} else {
 				i++
@@ -154,9 +159,8 @@ func (cl *Classifier) getMoveActions(ctx context.Context, cancel context.CancelF
 			cancel()
 			logrus.Errorf("error while pushing: %v", err2)
 			return
-		} else {
-			actionCount += count
 		}
+		actionCount += count
 	}
 	logrus.Infof("%v move(s)", actionCount)
 }
@@ -176,7 +180,7 @@ func (cl *Classifier) buildActionsAndPush(ctx context.Context, files []string, a
 			return 0, fmt.Errorf("Canceled")
 		default:
 			if d, err := cl.guessDate(fm); err != nil {
-				if err != noDateFound {
+				if err != errNoDateFount {
 					logrus.Errorf("error while generating moveAction for %v: %v", fm.File, err)
 				}
 			} else {

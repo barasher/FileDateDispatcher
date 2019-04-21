@@ -9,14 +9,17 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Exiftool is the exiftool utility wrapper
 type Exiftool struct {
 }
 
+// FileMetadata is a structure that represents an exiftool extraction
 type FileMetadata struct {
 	File   string
 	Fields map[string]interface{}
 }
 
+// NewExiftool instanciates a new Exiftool with configuration functions
 func NewExiftool(opts ...func(*Exiftool) error) (*Exiftool, error) {
 	e := Exiftool{}
 	for _, opt := range opts {
@@ -27,6 +30,7 @@ func NewExiftool(opts ...func(*Exiftool) error) (*Exiftool, error) {
 	return &e, nil
 }
 
+// Load extracts metadata from files
 func (e *Exiftool) Load(files []string) ([]FileMetadata, error) {
 	args := append([]string{"-j", "-q", "-m"}, files...)
 	cmd := exec.Command("exiftool", args...)

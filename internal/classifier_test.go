@@ -49,19 +49,19 @@ func TestNewClassifierError(t *testing.T) {
 
 func TestListFilesNominal(t *testing.T) {
 	var tcs = []struct {
-		tcId        string
+		tcID        string
 		folder      string
 		expFiles    []string
 		expCanceled bool
 	}{
 		{
-			tcId:        "nominal",
+			tcID:        "nominal",
 			folder:      "../testdata/input/",
 			expFiles:    []string{"../testdata/input/20190404_131804.jpg", "../testdata/input/subFolder/20190404_131805.jpg"},
 			expCanceled: false,
 		},
 		{
-			tcId:        "nonExistingFolder",
+			tcID:        "nonExistingFolder",
 			folder:      "../nonExistingFolder/",
 			expFiles:    []string{},
 			expCanceled: true,
@@ -69,7 +69,7 @@ func TestListFilesNominal(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		t.Run(tc.tcId, func(t *testing.T) {
+		t.Run(tc.tcID, func(t *testing.T) {
 
 			ctx, cancel := context.WithCancel(context.TODO())
 			filesChan := make(chan string, 10)
@@ -109,22 +109,22 @@ func TestBuildActionsAndPushCanceled(t *testing.T) {
 
 func TestBuildActionsAndPush(t *testing.T) {
 	var tcs = []struct {
-		tcId       string
+		tcID       string
 		files      []string
 		expActions []moveAction
 	}{
 		{
-			tcId:  "nominal",
+			tcID:  "nominal",
 			files: []string{"../testdata/input/20190404_131804.jpg"},
 			expActions: []moveAction{
 				{from: "../testdata/input/20190404_131804.jpg", to: "2019_04"},
 			},
 		}, {
-			tcId:       "fileWithoutDate",
+			tcID:       "fileWithoutDate",
 			files:      []string{"../testdata/input/subFolder/noDate.txt"},
 			expActions: []moveAction{},
 		}, {
-			tcId: "multiple",
+			tcID: "multiple",
 			files: []string{"../testdata/input/20190404_131804.jpg",
 				"../testdata/input/subFolder/20190404_131805.jpg",
 				"../testdata/input/subFolder/noDate.txt"},
@@ -136,7 +136,7 @@ func TestBuildActionsAndPush(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		t.Run(tc.tcId, func(t *testing.T) {
+		t.Run(tc.tcID, func(t *testing.T) {
 			func() {
 				ctx := context.TODO()
 				actionChan := make(chan moveAction, 10)
@@ -181,12 +181,12 @@ func TestGetMoveActionsCanceled(t *testing.T) {
 
 func TestGetMoveActions(t *testing.T) {
 	var tcs = []struct {
-		tcId       string
+		tcID       string
 		files      []string
 		expActions []moveAction
 	}{
 		{
-			tcId: "nominal",
+			tcID: "nominal",
 			files: []string{
 				"../testdata/input/20190404_131804.jpg",
 				"../testdata/input/subFolder/20190404_131805.jpg",
@@ -201,7 +201,7 @@ func TestGetMoveActions(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		t.Run(tc.tcId, func(t *testing.T) {
+		t.Run(tc.tcID, func(t *testing.T) {
 			func() {
 				ctx, cancel := context.WithCancel(context.TODO())
 				fileChan := make(chan string, 10)
@@ -290,7 +290,7 @@ func TestGuessDateWithoutDateField(t *testing.T) {
 	fm := exiftool.FileMetadata{File: "a", Fields: fields}
 	c := buildDefaultClassifier(t, 2)
 	_, err := c.guessDate(fm)
-	assert.Equal(t, noDateFound, err)
+	assert.Equal(t, errNoDateFount, err)
 }
 
 func TestGuessDateUnparsableDate(t *testing.T) {
@@ -302,7 +302,7 @@ func TestGuessDateUnparsableDate(t *testing.T) {
 	c := buildDefaultClassifier(t, 2)
 	_, err := c.guessDate(fm)
 	assert.NotNil(t, err)
-	assert.NotEqual(t, noDateFound, err)
+	assert.NotEqual(t, errNoDateFount, err)
 }
 
 func buildDefaultClassifier(t *testing.T, batchSize uint) *Classifier {
