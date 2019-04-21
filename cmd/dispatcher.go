@@ -1,20 +1,24 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
-	"strconv"
-	"strings"
-
-	"github.com/sirupsen/logrus"
 
 	classifier "github.com/barasher/FileDateDispatcher/internal"
+
+	_ "github.com/barasher/FileDateDispatcher/pkg"
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	retOk          int = 0
 	retConfFailure int = 1
 	retExecFailure int = 2
+
+	defaultLoggingLevel string = "info"
+	defaultBatchSize    uint   = uint(10)
 )
 
 var loggingLevels = map[string]logrus.Level{
@@ -26,6 +30,11 @@ var loggingLevels = map[string]logrus.Level{
 	"panic": logrus.PanicLevel,
 }
 
+type dispatcherConf struct {
+	LoggingLevel string `json:"loggingLevel"`
+	BatchSize    uint   `json:"batchSize"`
+}
+
 func main() {
 	os.Exit(doMain(os.Args))
 }
@@ -34,12 +43,8 @@ func doMain(args []string) int {
 	cmd := flag.NewFlagSet("Classifier", flag.ContinueOnError)
 	from := cmd.String("s", "", "Source folder")
 	to := cmd.String("d", "", "Destination folder")
-	batchSize := cmd.String("b", "10", "Batch size")
-	logLevelLists := make([]string, 0, len(loggingLevels))
-	for lvl := range loggingLevels {
-		logLevelLists = append(logLevelLists, lvl)
-	}
-	logLevel := cmd.String("l", "", "Logging level ("+strings.Join(logLevelLists, "|")+")")
+	confFile := cmd.String("c", "", "Configuration file")
+
 	err := cmd.Parse(args[1:])
 	if err != nil {
 		if err != flag.ErrHelp {
@@ -48,22 +53,25 @@ func doMain(args []string) int {
 		return retConfFailure
 	}
 
-	var opts []func(*classifier.Classifier) error
-	if *batchSize == "" {
-		logrus.Errorf("No batchSize provided (-b)")
+	if *confFile == "" {
+		logrus.Errorf("No configuration file provided (-c)")
 		return retConfFailure
 	}
-	batchSizeInt, err := strconv.Atoi(*batchSize)
+	conf, err := loadConf(*confFile)
 	if err != nil {
-		logrus.Errorf("Error during batchSize conversion (%v): %v", *batchSize, err)
+		logrus.Errorf("Error during configuration file validation: %v", err)
 		return retConfFailure
 	}
-	if batchSizeInt <= 0 {
-		logrus.Errorf("Wrong batchSize value (%v), must be > 0", batchSizeInt)
+
+	if logLvl, found := loggingLevels[conf.LoggingLevel]; !found {
+		logrus.Errorf("Unknown logging level specified (%v)", conf.LoggingLevel)
 		return retConfFailure
+	} else {
+		logrus.SetLevel(logLvl)
 	}
-	logrus.Infof("BatchSize: %v", batchSizeInt)
-	opts = append(opts, classifier.OptBatchSize(uint(batchSizeInt)))
+
+	var opts []func(*classifier.Classifier) error
+	opts = append(opts, classifier.OptBatchSize(conf.BatchSize))
 
 	if *from == "" {
 		logrus.Errorf("No source provided (-s)")
@@ -73,16 +81,6 @@ func doMain(args []string) int {
 	if *to == "" {
 		logrus.Errorf("No destination provided (-s)")
 		return retConfFailure
-	}
-
-	logrus.SetLevel(logrus.InfoLevel)
-	if *logLevel != "" {
-		lvl, found := loggingLevels[*logLevel]
-		if !found {
-			logrus.Errorf("Logging level unknown (%v)", *logLevel)
-			return retConfFailure
-		}
-		logrus.SetLevel(lvl)
 	}
 
 	c, err := classifier.NewClassifier(opts...)
@@ -97,4 +95,29 @@ func doMain(args []string) int {
 	}
 
 	return retOk
+}
+
+func loadConf(confFile string) (dispatcherConf, error) {
+	c := dispatcherConf{}
+
+	r, err := os.Open(confFile)
+	if err != nil {
+		return c, fmt.Errorf("Error while opening configuration file %v :%v", confFile, err)
+	}
+	err = json.NewDecoder(r).Decode(&c)
+	if err != nil {
+		return c, fmt.Errorf("Error while unmarshaling configuration file %v :%v", confFile, err)
+	}
+
+	if c.BatchSize < 1 {
+		c.BatchSize = defaultBatchSize
+		logrus.Warnf("No batch size specified (or 0), using default (%v)", c.BatchSize)
+	}
+
+	if c.LoggingLevel == "" {
+		c.LoggingLevel = defaultLoggingLevel
+		logrus.Warnf("No logging level specified, using default (%v)", c.LoggingLevel)
+	}
+
+	return c, nil
 }

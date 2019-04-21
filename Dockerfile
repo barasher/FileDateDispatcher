@@ -5,7 +5,8 @@ RUN apt-get install -y libimage-exiftool-perl
 COPY . .
 RUN GO111MODULE=on go get -d ./...
 RUN GO111MODULE=on go build cmd/dispatcher.go
-RUN mkdir /var/in
-RUN mkdir /var/out
-CMD [ "./dispatcher", "-s", "/var/in", "-d", "/var/out" ]
-#CMD ["/bin/bash"]
+RUN mkdir -p /var/dispatcher/in
+RUN mkdir -p /var/dispatcher/out
+RUN mkdir -p /etc/dispatcher
+COPY docker.json /etc/dispatcher/dispatcher.json
+CMD [ "./dispatcher", "-c", "/etc/dispatcher/dispatcher.json", "-s", "/var/dispatcher/in", "-d", "/var/dispatcher/out" ]

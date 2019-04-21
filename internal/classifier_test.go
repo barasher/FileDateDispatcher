@@ -88,7 +88,7 @@ func TestBuildActionsAndPush(t *testing.T) {
 			tcId:  "nominal",
 			files: []string{"../testdata/input/20190404_131804.jpg"},
 			expActions: []moveAction{
-				moveAction{from: "../testdata/input/20190404_131804.jpg", to: "2019_04"},
+				{from: "../testdata/input/20190404_131804.jpg", to: "2019_04"},
 			},
 		}, {
 			tcId:       "fileWithoutDate",
@@ -100,8 +100,8 @@ func TestBuildActionsAndPush(t *testing.T) {
 				"../testdata/input/subFolder/20190404_131805.jpg",
 				"../testdata/input/subFolder/noDate.txt"},
 			expActions: []moveAction{
-				moveAction{from: "../testdata/input/20190404_131804.jpg", to: "2019_04"},
-				moveAction{from: "../testdata/input/subFolder/20190404_131805.jpg", to: "2019_04"},
+				{from: "../testdata/input/20190404_131804.jpg", to: "2019_04"},
+				{from: "../testdata/input/subFolder/20190404_131805.jpg", to: "2019_04"},
 			},
 		},
 	}
@@ -164,9 +164,9 @@ func TestGetMoveActions(t *testing.T) {
 				"../testdata/input/subFolder/20190404_131806.jpg",
 			},
 			expActions: []moveAction{
-				moveAction{from: "../testdata/input/20190404_131804.jpg", to: "2019_04"},
-				moveAction{from: "../testdata/input/subFolder/20190404_131805.jpg", to: "2019_04"},
-				moveAction{from: "../testdata/input/subFolder/20190404_131806.jpg", to: "2019_04"},
+				{from: "../testdata/input/20190404_131804.jpg", to: "2019_04"},
+				{from: "../testdata/input/subFolder/20190404_131805.jpg", to: "2019_04"},
+				{from: "../testdata/input/subFolder/20190404_131806.jpg", to: "2019_04"},
 			},
 		},
 	}
