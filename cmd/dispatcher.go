@@ -17,8 +17,9 @@ const (
 	retConfFailure int = 1
 	retExecFailure int = 2
 
-	defaultLoggingLevel string = "info"
-	defaultBatchSize    uint   = uint(10)
+	defaultLoggingLevel     string = "info"
+	defaultBatchSize        uint   = uint(10)
+	defaultOutputDateFormat string = "2006_01"
 )
 
 var loggingLevels = map[string]logrus.Level{
@@ -36,9 +37,10 @@ type dateField struct {
 }
 
 type dispatcherConf struct {
-	LoggingLevel string      `json:"loggingLevel"`
-	BatchSize    uint        `json:"batchSize"`
-	DateFields   []dateField `json:"dateFields"`
+	LoggingLevel     string      `json:"loggingLevel"`
+	BatchSize        uint        `json:"batchSize"`
+	DateFields       []dateField `json:"dateFields"`
+	OutputDateFormat string      `json:"outputDateFormat"`
 }
 
 func main() {
@@ -83,6 +85,7 @@ func doMain(args []string) int {
 		dfs[v.Field] = v.Pattern
 	}
 	classifierOpts = append(classifierOpts, classifier.OptDateFields(dfs))
+	classifierOpts = append(classifierOpts, classifier.OptOutputDateFormat(conf.OutputDateFormat))
 
 	if *from == "" {
 		logrus.Errorf("No source provided (-s)")
@@ -124,10 +127,13 @@ func loadConf(confFile string) (dispatcherConf, error) {
 		c.BatchSize = defaultBatchSize
 		logrus.Warnf("No batch size specified (or 0), using default (%v)", c.BatchSize)
 	}
-
 	if c.LoggingLevel == "" {
 		c.LoggingLevel = defaultLoggingLevel
 		logrus.Warnf("No logging level specified, using default (%v)", c.LoggingLevel)
+	}
+	if c.OutputDateFormat == "" {
+		c.OutputDateFormat = defaultOutputDateFormat
+		logrus.Warnf("No output date format specified, using default (%v)", c.OutputDateFormat)
 	}
 
 	if len(c.DateFields) == 0 {

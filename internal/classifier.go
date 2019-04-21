@@ -20,7 +20,8 @@ type moveAction struct {
 }
 
 type Classifier struct {
-	batchSize uint
+	batchSize        uint
+	outputDateFormat string
 }
 
 var dateFields map[string]string = make(map[string]string)
@@ -28,7 +29,7 @@ var dateFields map[string]string = make(map[string]string)
 var noDateFound error = fmt.Errorf("No data found")
 
 func NewClassifier(classOpts ...func(*Classifier) error) (*Classifier, error) {
-	c := Classifier{batchSize: 10}
+	c := Classifier{batchSize: 10, outputDateFormat: "2006_01"}
 	for _, opt := range classOpts {
 		if err := opt(&c); err != nil {
 			return nil, fmt.Errorf("error when configuring classifier: %v", err)
@@ -49,6 +50,13 @@ func OptDateFields(fields map[string]string) func(*Classifier) error {
 		for f, p := range fields {
 			dateFields[f] = p
 		}
+		return nil
+	}
+}
+
+func OptOutputDateFormat(format string) func(*Classifier) error {
+	return func(c *Classifier) error {
+		c.outputDateFormat = format
 		return nil
 	}
 }
@@ -174,7 +182,7 @@ func (cl *Classifier) buildActionsAndPush(ctx context.Context, files []string, a
 			} else {
 				actionChan <- moveAction{
 					from: fm.File,
-					to:   d.Format("2006_01"),
+					to:   d.Format(cl.outputDateFormat),
 				}
 				actionCount++
 			}

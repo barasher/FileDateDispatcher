@@ -12,18 +12,19 @@ func TestLoadConf(t *testing.T) {
 		dateField{"Media Create Date", "2006:01:02 15:04:05"},
 	}
 	var tcs = []struct {
-		tcId            string
-		confFile        string
-		expError        bool
-		expLoggingLevel string
-		expBatchSize    uint
-		expDateFields   []dateField
+		tcId                string
+		confFile            string
+		expError            bool
+		expLoggingLevel     string
+		expBatchSize        uint
+		expDateFields       []dateField
+		expOutputDateFormat string
 	}{
-		{"nominal", "../testdata/conf/nominal.json", false, "warning", 42, expDateFields},
-		{"default", "../testdata/conf/default.json", false, defaultLoggingLevel, defaultBatchSize, expDateFields},
-		{"unparsable", "../testdata/conf/unparsable.json", true, "", 0, nil},
-		{"nonExisting", "../testdata/conf/nonExisting.json", true, "", 0, nil},
-		{"noDateField", "../testdata/conf/noDateField.json", true, "", 0, nil},
+		{"nominal", "../testdata/conf/nominal.json", false, "warning", 42, expDateFields, "2016+01"},
+		{"default", "../testdata/conf/default.json", false, defaultLoggingLevel, defaultBatchSize, expDateFields, defaultOutputDateFormat},
+		{"unparsable", "../testdata/conf/unparsable.json", true, "", 0, nil, ""},
+		{"nonExisting", "../testdata/conf/nonExisting.json", true, "", 0, nil, ""},
+		{"noDateField", "../testdata/conf/noDateField.json", true, "", 0, nil, ""},
 	}
 
 	for _, tc := range tcs {
