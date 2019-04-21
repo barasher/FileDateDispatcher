@@ -9,4 +9,5 @@ before_install:
   - env GO111MODULE=on go get -v
 
 script:
-- env GO111MODULE=on go test -v ./...
+  - env GO111MODULE=on go test -v ./...
+  - docker build .
