@@ -8,7 +8,6 @@ import (
 
 	classifier "github.com/barasher/FileDateDispatcher/internal"
 
-	_ "github.com/barasher/FileDateDispatcher/pkg"
 	"github.com/sirupsen/logrus"
 )
 

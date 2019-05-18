@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	exiftool "github.com/barasher/FileDateDispatcher/pkg"
+	"github.com/barasher/go-exiftool"
 )
 
 func checkExist(t *testing.T, path string, shouldExist bool) {

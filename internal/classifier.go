@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	exiftool "github.com/barasher/FileDateDispatcher/pkg"
+	"github.com/barasher/go-exiftool"
 
 	"github.com/sirupsen/logrus"
 )
@@ -167,11 +167,12 @@ func (cl *Classifier) getMoveActions(ctx context.Context, cancel context.CancelF
 
 func (cl *Classifier) buildActionsAndPush(ctx context.Context, files []string, actionChan chan moveAction) (int, error) {
 	logrus.Debugf("Build action batch: %v", files)
-	e := exiftool.Exiftool{}
-	fms, err := e.Load(files)
+	e, err := exiftool.NewExiftool()
 	if err != nil {
-		return 0, fmt.Errorf("error while building actions: %v", err)
+		return 0, fmt.Errorf("error while intializing exiftool: %v", err)
 	}
+	defer e.Close()
+	fms := e.ExtractMetadata(files...)
 
 	actionCount := 0
 	for _, fm := range fms {
@@ -179,6 +180,10 @@ func (cl *Classifier) buildActionsAndPush(ctx context.Context, files []string, a
 		case <-ctx.Done():
 			return 0, fmt.Errorf("Canceled")
 		default:
+			if fm.Err != nil {
+				logrus.Errorf("error while extracting metadata from  %v: %v", fm.File, fm.Err)
+				continue
+			}
 			if d, err := cl.guessDate(fm); err != nil {
 				if err != errNoDateFount {
 					logrus.Errorf("error while generating moveAction for %v: %v", fm.File, err)
