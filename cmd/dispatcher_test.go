@@ -12,7 +12,7 @@ func TestLoadConf(t *testing.T) {
 		{"Media Create Date", "2006:01:02 15:04:05"},
 	}
 	var tcs = []struct {
-		tcId                string
+		tcID                string
 		confFile            string
 		expError            bool
 		expLoggingLevel     string
@@ -28,7 +28,7 @@ func TestLoadConf(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		t.Run(tc.tcId, func(t *testing.T) {
+		t.Run(tc.tcID, func(t *testing.T) {
 			c, err := loadConf(tc.confFile)
 			assert.Equal(t, tc.expError, err != nil)
 			if !tc.expError {
@@ -42,7 +42,7 @@ func TestLoadConf(t *testing.T) {
 
 func TestDoMainFailure(t *testing.T) {
 	var tcs = []struct {
-		tcId    string
+		tcID    string
 		params  []string
 		expCode int
 	}{
@@ -54,7 +54,7 @@ func TestDoMainFailure(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		t.Run(tc.tcId, func(t *testing.T) {
+		t.Run(tc.tcID, func(t *testing.T) {
 			ret := doMain(tc.params)
 			assert.Equal(t, tc.expCode, ret)
 		})

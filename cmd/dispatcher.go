@@ -70,12 +70,12 @@ func doMain(args []string) int {
 		return retConfFailure
 	}
 
-	if logLvl, found := loggingLevels[conf.LoggingLevel]; !found {
+	logLvl, found := loggingLevels[conf.LoggingLevel]
+	if !found {
 		logrus.Errorf("Unknown logging level specified (%v)", conf.LoggingLevel)
 		return retConfFailure
-	} else {
-		logrus.SetLevel(logLvl)
 	}
+	logrus.SetLevel(logLvl)
 
 	var classifierOpts []func(*classifier.Classifier) error
 	classifierOpts = append(classifierOpts, classifier.OptBatchSize(conf.BatchSize))

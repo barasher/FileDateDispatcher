@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/barasher/FileDateDispatcher.svg?branch=master)](https://travis-ci.org/barasher/FileDateDispatcher)
 [![go report card](https://goreportcard.com/badge/github.com/barasher/FileDateDispatcher "go report card")](https://goreportcard.com/report/github.com/barasher/FileDateDispatcher)
-
+[![GoDoc](https://godoc.org/github.com/barasher/FileDateDispatcher?status.svg)](https://godoc.org/github.com/barasher/FileDateDispatcher)
 
 ## Presentation
 
